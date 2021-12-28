@@ -7,5 +7,4 @@ setup(
     description='Lib to scrap the web for fiis` information',
     author='Marcos Xaxá',
     license='MIT',
-    packages=['fiicrawler'],
 )

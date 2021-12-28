@@ -48,8 +48,7 @@ class Crawler(MongoConnect):
                  Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
         content = requests.get(URL, headers=headers)
         soup = BeautifulSoup(content.text, 'html.parser')
-        for quote in soup.find(
-                'div', attrs={'title': 'Valor atual do ativo'}).find_all('strong'):
+        for quote in soup.find('div', attrs={'title': 'Valor atual do ativo'}).find_all('strong'):
             quote = quote.text
             quote = quote.replace('.', '').replace(',','.')
         fii_price["ticker"] = fii_ticker
@@ -66,7 +65,7 @@ class Crawler(MongoConnect):
             try:
                 price_fii = self.__get_price__(item)
 
-                uid_base = str(self.now.strftime("%2d%m%y")) + '-'
+                uid_base = str(self.now.strftime("%d%m%y")) + '-'
                 uid_fii = uid_base + item.lower()
 
                 date = self.today

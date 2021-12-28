@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import requests
 from bs4 import BeautifulSoup
-from myclass.Mongo import MongoConnect
+from app.Mongo import MongoConnect
 
 
 class Crawler(MongoConnect):

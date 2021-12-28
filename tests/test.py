@@ -8,7 +8,7 @@ password = os.environ["DB_PASSWORD"] = "test"
 db_name = os.environ["DB_NAME"] = "test"
 username = os.environ["DB_USERNAME"] = "test"
 
-from myclass.Crawler import Crawler
+from crawler.daily_crawler import Crawler
 
 class TestFiis(TestCase,Crawler):
 

@@ -1,5 +1,6 @@
 import os
 from pymongo import MongoClient
+import certifi
 
 class MongoConnect():
 
@@ -15,10 +16,10 @@ class MongoConnect():
         """
         pass
 
-    def connect(self):
+    def connect(self,col_name):
         """
         Method to connect to a predefined mongodb atlas cluster. No arguments needed
         """
-        client = MongoClient(f'mongodb+srv://{self.username}:{self.password}@fii-api.gnuy4.mongodb.net/{self.db_name}?retryWrites=true&w=majority')
-        db_conn = client.dev.daily_info
+        client = MongoClient(f'mongodb+srv://{self.username}:{self.password}@fii-api.gnuy4.mongodb.net/{self.db_name}?retryWrites=true&w=majority', tlsCAFile=certifi.where())
+        db_conn = client[self.db_name][col_name]
         return db_conn

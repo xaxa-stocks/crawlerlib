@@ -17,7 +17,7 @@ class Crawler(MongoConnect):
 
 
     def __init__(self):
-        print("Debug!")
+        pass
 
 
     def get_fii_list(self):
@@ -59,7 +59,7 @@ class Crawler(MongoConnect):
 
 
 
-    def add_price_data_to_table(self,stock_list):
+    def add_price_data_to_table(self,stock_list,collection):
 
         for item in stock_list:
             print(item)
@@ -73,7 +73,7 @@ class Crawler(MongoConnect):
                 name = price_fii["ticker"].lower()
                 price = round(price_fii["eod_price"],2)
 
-                conn = MongoConnect.connect(self)
+                conn = MongoConnect.connect(self,collection)
                 
                 
                 if conn.find_one({"_id": uid_fii}):

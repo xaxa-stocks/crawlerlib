@@ -1,10 +1,10 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='fii_package',
+    name='fii_crawler',
     packages=find_packages(),
-    version='0.1.0',
-    description='My first Python library',
-    author='Me',
+    version='0.0.1',
+    description='Lib to scrap the web for fiis` information',
+    author='Marcos Xaxá',
     license='MIT',
 )

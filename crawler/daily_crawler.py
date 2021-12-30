@@ -6,7 +6,7 @@ from crawler.mongo import MongoConnect
 
 class Crawler(MongoConnect):
 
-    '''This is a docstring '''
+    ''' Class to get fiis list, prices and save to a mongodb colletion '''
 
     # Function to retrieve a list of fiis and save it to dynamoDB
     now = datetime.now()

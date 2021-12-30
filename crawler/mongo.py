@@ -4,7 +4,7 @@ import certifi
 
 class MongoConnect():
 
-    '''Class to abstract connection to mongodb'''
+    '''Class to connect to mongodb'''
 
     username = os.environ['DB_USERNAME']
     password = os.environ['DB_PASSWORD']
@@ -16,9 +16,11 @@ class MongoConnect():
         """
         pass
 
-    def connect(self,col_name):
+    def connect(self,col_name: str):
         """
-        Method to connect to a predefined mongodb atlas cluster. No arguments needed
+        Method to connect to a predefined mongodb atlas cluster.
+
+        Args: col_name >>> Collection name to connect to
         """
         client = MongoClient(f'mongodb+srv://{self.username}:{self.password}@fii-api.gnuy4.mongodb.net/{self.db_name}?retryWrites=true&w=majority', tlsCAFile=certifi.where())
         db_conn = client[self.db_name][col_name]

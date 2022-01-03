@@ -30,6 +30,8 @@ class Sanitizer(Crawler):
                     if conn_history.find_one({"name": item}):
                         print("Adding stock data in historical collection")
                         conn_history.update_one({"name": item}, {"$addToSet": { "historical": {"Date": yesterday, "Close": fii_info["current_price"]} }})
+                else:
+                    print("No data found for yesterday. Exiting...")
             except Exception as e:
                 print(e)
                 print("Something went wrong")

@@ -23,7 +23,10 @@ class Crawler(MongoConnect):
     def get_fii_list(self):
         # URL to retrieve the data from
         URL = 'https://fiis.com.br/lista-de-fundos-imobiliarios/'
-        content = requests.get(URL)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; \
+                 Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
+        content = requests.get(URL, headers=headers)
         soup = BeautifulSoup(content.text, 'html.parser')
         # Get the occurencies of class ticker to the variable rows
         rows = soup.find_all("span", {"class": "ticker"})

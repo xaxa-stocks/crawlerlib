@@ -1,5 +1,5 @@
 import os
-from unittest import TestCase, mock
+from unittest import TestCase
 import unittest
 from crawler.daily_crawler import Crawler
 
@@ -14,8 +14,8 @@ ticker = "bcff11"
 class TestFiis(TestCase,Crawler):
 
 
-
     def test_list_fiis(self):
+
         fiis_list = Crawler.get_fii_list(self)
         self.assertIn("BCFF11", fiis_list)
 

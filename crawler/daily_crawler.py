@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 import requests
 from bs4 import BeautifulSoup
-from myclass.Mongo import MongoConnect
+from crawler.mongo import MongoConnect
 
 
 class Crawler(MongoConnect):
 
-    '''This is a docstring '''
+    ''' Class to get fiis list, prices and save to a mongodb colletion '''
 
     # Function to retrieve a list of fiis and save it to dynamoDB
     now = datetime.now()
@@ -17,13 +17,16 @@ class Crawler(MongoConnect):
 
 
     def __init__(self):
-        print("Debug!")
+        pass
 
 
     def get_fii_list(self):
         # URL to retrieve the data from
         URL = 'https://fiis.com.br/lista-de-fundos-imobiliarios/'
-        content = requests.get(URL)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; \
+                 Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
+        content = requests.get(URL, headers=headers)
         soup = BeautifulSoup(content.text, 'html.parser')
         # Get the occurencies of class ticker to the variable rows
         rows = soup.find_all("span", {"class": "ticker"})
@@ -48,8 +51,7 @@ class Crawler(MongoConnect):
                  Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
         content = requests.get(URL, headers=headers)
         soup = BeautifulSoup(content.text, 'html.parser')
-        for quote in soup.find(
-                'div', attrs={'title': 'Valor atual do ativo'}).find_all('strong'):
+        for quote in soup.find('div', attrs={'title': 'Valor atual do ativo'}).find_all('strong'):
             quote = quote.text
             quote = quote.replace('.', '').replace(',','.')
         fii_price["ticker"] = fii_ticker
@@ -59,21 +61,21 @@ class Crawler(MongoConnect):
 
 
 
-    def add_price_data_to_table(self,stock_list):
+    def add_price_data_to_table(self,stock_list,collection):
 
         for item in stock_list:
             print(item)
             try:
                 price_fii = self.__get_price__(item)
 
-                uid_base = str(self.now.strftime("%2d%m%y")) + '-'
+                uid_base = str(self.now.strftime("%d%m%y")) + '-'
                 uid_fii = uid_base + item.lower()
 
                 date = self.today
                 name = price_fii["ticker"].lower()
                 price = round(price_fii["eod_price"],2)
 
-                conn = MongoConnect.connect(self)
+                conn = MongoConnect.connect(self,collection)
                 
                 
                 if conn.find_one({"_id": uid_fii}):

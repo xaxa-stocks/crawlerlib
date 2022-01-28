@@ -9,7 +9,7 @@ class Sanitizer(Crawler):
     """
 
     def __init__(self):
-        pass
+        pass # Method to initialize class
 
     def retrieve_fii(self,stock_list: list):
         """"
@@ -35,12 +35,3 @@ class Sanitizer(Crawler):
             except Exception as e:
                 print(e)
                 print("Something went wrong")
-
-sanitizer = Sanitizer()
-
-fiis_list = sanitizer.get_fii_list()
-
-# fiis_list = ["bcff11"]
-
-fii = sanitizer.retrieve_fii(fiis_list)
-

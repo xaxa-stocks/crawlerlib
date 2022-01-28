@@ -17,7 +17,7 @@ class Crawler(MongoConnect):
 
 
     def __init__(self):
-        pass
+        pass # Method to initialize the class
 
 
     def get_fii_list(self):

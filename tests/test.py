@@ -1,15 +1,13 @@
 import os
 from unittest import TestCase
 import unittest
-from crawler.daily_crawler import Crawler
 
-
-
-password = os.environ["DB_PASSWORD"] = "test"
-db_name = os.environ["DB_NAME"] = "test"
-username = os.environ["DB_USERNAME"] = "test"
+password = os.environ["DB_PASSWORD"] = ""
+db_name = os.environ["DB_NAME"] = ""
+username = os.environ["DB_USERNAME"] = ""
 ticker = "bcff11"
 
+from crawler.daily_crawler import Crawler
 
 class TestFiis(TestCase,Crawler):
 

@@ -1,3 +1,4 @@
+'''Module to get and save assets info'''
 from datetime import datetime, timedelta
 import requests
 from bs4 import BeautifulSoup
@@ -21,12 +22,17 @@ class Crawler(MongoConnect):
 
 
     def get_fii_list(self):
-        # URL to retrieve the data from
-        URL = 'https://fiis.com.br/lista-de-fundos-imobiliarios/'
+        '''Get a list with all the available assets
+
+        Returns:
+        List with all the assets
+        '''
+        # url to retrieve the data from
+        url = 'https://fiis.com.br/lista-de-fundos-imobiliarios/'
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; \
                  Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
-        content = requests.get(URL, headers=headers)
+        content = requests.get(url, headers=headers)
         soup = BeautifulSoup(content.text, 'html.parser')
         # Get the occurencies of class ticker to the variable rows
         rows = soup.find_all("span", {"class": "ticker"})
@@ -42,31 +48,47 @@ class Crawler(MongoConnect):
         return fii_table
 
 
-    def __get_price__(self,fii_ticker):
+    def _get_price(self,fii_ticker: str):
+        '''Get price for a given asset
+        
+        Args:
+        fii_ticker: String with a fii ticker. Ex: bcff11
+
+        Returns:
+        The price of the asset
+
+        '''
         fii_price = {}
         base_url = 'https://statusinvest.com.br/fundos-imobiliarios/'
-        URL = base_url + fii_ticker.lower()
+        url = base_url + fii_ticker.lower()
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; \
                  Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
-        content = requests.get(URL, headers=headers)
+        content = requests.get(url, headers=headers)
         soup = BeautifulSoup(content.text, 'html.parser')
-        for quote in soup.find('div', attrs={'title': 'Valor atual do ativo'}).find_all('strong'):
-            quote = quote.text
-            quote = quote.replace('.', '').replace(',','.')
-        fii_price["ticker"] = fii_ticker
-        fii_price["eod_price"] = float(quote)
-        fii_price["day"] = self.now.strftime("%d/%m/%Y")
-        return fii_price
+        try:
+            for quote in soup.find('div', attrs={'title': 'Valor atual do ativo'}).find_all('strong'):
+                quote = quote.text
+                quote = quote.replace('.', '').replace(',','.')
+            fii_price["ticker"] = fii_ticker
+            fii_price["eod_price"] = float(quote)
+            fii_price["day"] = self.now.strftime("%d/%m/%Y")
+            return fii_price
+        except BaseException:
+            return "No return for this fii"
 
-
-
-    def add_price_data_to_table(self,stock_list,collection):
+    def add_price_data_to_table(self,stock_list: list,collection: str):
+        '''Adds the price of an asset to mongo db
+        
+        Args:
+        stock_list: List with the assets to get and add price
+        collection: Collection in mongo db
+        '''
 
         for item in stock_list:
             print(item)
             try:
-                price_fii = self.__get_price__(item)
+                price_fii = self._get_price(item)
 
                 uid_base = str(self.now.strftime("%d%m%y")) + '-'
                 uid_fii = uid_base + item.lower()
@@ -76,13 +98,12 @@ class Crawler(MongoConnect):
                 price = round(price_fii["eod_price"],2)
 
                 conn = MongoConnect.connect(self,collection)
-                
-                
+                 
                 if conn.find_one({"_id": uid_fii}):
                     conn.update_one({'_id': uid_fii}, {'$set': {'current_price': price}})
-                    print("Price for {} updated!".format(item))
+                    print(f"Price for {item} updated!")
                 else:
-                    print("Will add {} - {}".format(item,self.now))
+                    print(f"Will add {item} - {self.now}")
                     item = {
                         '_id': uid_fii,
                         'date': date,
@@ -93,6 +114,7 @@ class Crawler(MongoConnect):
                     conn.replace_one({'_id': uid_fii}, item, upsert=True)
 
                     print(f"Price data for {name} added - {self.now}")
-            except Exception as e:
-                print(e)
+            except Exception as error:
+                print(error)
                 print(f"There is no info for this fii - {self.now}")
+                

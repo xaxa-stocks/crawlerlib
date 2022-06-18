@@ -1,25 +1,28 @@
 '''Module to get and save assets info'''
 from datetime import datetime, timedelta
+from pyparsing import col
 import requests
 from bs4 import BeautifulSoup
 from crawler.mongo import MongoConnect
 
+
+def get_and_add_asset(collection: str, stock_list: list = None ):
+    with Crawler() as crawler_session:
+        crawler_session.add_price_data_to_table(collection=collection, stock_list=stock_list)
 
 class Crawler(MongoConnect):
 
     ''' Class to get fiis list, prices and save to a mongodb colletion '''
 
     # Function to retrieve a list of fiis and save it to dynamoDB
-    now = datetime.now()
-    today = now.strftime("%Y-%m-%d")
-    delta_last_month = now - timedelta(days=30)
-    last_month = str(delta_last_month.strftime("%m/%y"))
-    current_month = str(now.strftime("%m/%y"))
 
 
     def __init__(self):
-        pass # Method to initialize the class
-
+        self.now = datetime.now()
+        self.today = self.now.strftime("%Y-%m-%d")
+        self.delta_last_month = self.now - timedelta(days=30)
+        self.last_month = str(self.delta_last_month.strftime("%m/%y"))
+        self.current_month = str(self.now.strftime("%m/%y"))
 
     def get_fii_list(self):
         '''Get a list with all the available assets
@@ -77,13 +80,15 @@ class Crawler(MongoConnect):
         except BaseException:
             return "No return for this fii"
 
-    def add_price_data_to_table(self,stock_list: list,collection: str):
+    def add_price_data_to_table(self,collection: str,stock_list: list = None):
         '''Adds the price of an asset to mongo db
         
         Args:
         stock_list: List with the assets to get and add price
         collection: Collection in mongo db
         '''
+        if not stock_list:
+            stock_list = self.get_fii_list()
 
         for item in stock_list:
             print(item)
@@ -97,7 +102,8 @@ class Crawler(MongoConnect):
                 name = price_fii["ticker"].lower()
                 price = round(price_fii["eod_price"],2)
 
-                conn = MongoConnect.connect(self,collection)
+                conn = MongoConnect()
+                conn = conn.connect(collection)
                  
                 if conn.find_one({"_id": uid_fii}):
                     conn.update_one({'_id': uid_fii}, {'$set': {'current_price': price}})
@@ -117,4 +123,10 @@ class Crawler(MongoConnect):
             except Exception as error:
                 print(error)
                 print(f"There is no info for this fii - {self.now}")
-                
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exec):
+        pass
+        # if self.client:
+        #     self.client.close()

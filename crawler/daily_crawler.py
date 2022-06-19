@@ -1,16 +1,16 @@
 '''Module to get and save assets info'''
 from datetime import datetime, timedelta
-from pyparsing import col
 import requests
 from bs4 import BeautifulSoup
 from crawler.mongo import MongoConnect
 
 
 def get_and_add_asset(collection: str, stock_list: list = None ):
+    """Main method called from pod"""
     with Crawler() as crawler_session:
         crawler_session.add_price_data_to_table(collection=collection, stock_list=stock_list)
 
-class Crawler(MongoConnect):
+class Crawler():
 
     ''' Class to get fiis list, prices and save to a mongodb colletion '''
 
@@ -53,7 +53,6 @@ class Crawler(MongoConnect):
 
     def _get_price(self,fii_ticker: str):
         '''Get price for a given asset
-        
         Args:
         fii_ticker: String with a fii ticker. Ex: bcff11
 
@@ -125,8 +124,10 @@ class Crawler(MongoConnect):
                 print(f"There is no info for this fii - {self.now}")
     def __enter__(self):
         return self
-
-    def __exit__(self, *exec):
-        pass
-        # if self.client:
-        #     self.client.close()
+        
+    # FIXME - IMPLEMENT
+    # def __exit__(self, *args):
+    #     if 
+    #     pass
+    #     # if self.client:
+    #     #     self.client.close()

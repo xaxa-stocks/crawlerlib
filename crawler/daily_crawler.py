@@ -124,10 +124,8 @@ class Crawler():
                 print(f"There is no info for this fii - {self.now}")
     def __enter__(self):
         return self
-        
-    # FIXME - IMPLEMENT
-    # def __exit__(self, *args):
-    #     if 
-    #     pass
-    #     # if self.client:
-    #     #     self.client.close()
+
+    def __exit__(self, *args):
+        print("Exiting class")
+        # if self.client:
+        #     self.client.close()

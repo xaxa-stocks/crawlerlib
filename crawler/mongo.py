@@ -23,9 +23,3 @@ class MongoConnect():
         db_conn = client[self.db_name][col_name]
         return db_conn
         
-    # def __enter__(self, *exec):
-    #     return self
-
-    # def __exit__(self, *exec):
-    #     if self.client:
-    #         self.client.close()

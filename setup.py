@@ -8,7 +8,7 @@ setup(
     author='Marcos Xaxá',
     license='MIT',
     install_requires=[
-        'beautifulsoup4==4.10.0,',
+        'beautifulsoup4==4.10.0',
         "bs4==0.0.1",
         'certifi==2021.10.8',
         'charset-normalizer==2.0.9',

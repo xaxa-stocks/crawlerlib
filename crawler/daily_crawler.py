@@ -4,18 +4,12 @@ import requests
 from bs4 import BeautifulSoup
 from crawler.mongo import MongoConnect
 
-
-def get_and_add_asset(collection: str, stock_list: list = None ):
+def get_and_add_asset(stock_list: list = None ):
     """Main method called from pod"""
     with Crawler() as crawler_session:
-        crawler_session.add_price_data_to_table(collection=collection, stock_list=stock_list)
-
+        crawler_session.add_price_data_to_table(stock_list=stock_list)
 class Crawler():
-
     ''' Class to get fiis list, prices and save to a mongodb colletion '''
-
-    # Function to retrieve a list of fiis and save it to dynamoDB
-
 
     def __init__(self):
         self.now = datetime.now()
@@ -23,6 +17,18 @@ class Crawler():
         self.delta_last_month = self.now - timedelta(days=30)
         self.last_month = str(self.delta_last_month.strftime("%m/%y"))
         self.current_month = str(self.now.strftime("%m/%y"))
+        self.session_db = self.db_session(collection="daily_info")
+
+    def requests_session(self, url):
+        """Generic requests session
+        Args: url: Url to request
+        Returns: bs in html parser
+        """
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; \
+                 Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
+        content = requests.get(url, headers=headers)
+        return BeautifulSoup(content.text, 'html.parser')
 
     def get_fii_list(self):
         '''Get a list with all the available assets
@@ -32,11 +38,7 @@ class Crawler():
         '''
         # url to retrieve the data from
         url = 'https://fiis.com.br/lista-de-fundos-imobiliarios/'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; \
-                 Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
-        content = requests.get(url, headers=headers)
-        soup = BeautifulSoup(content.text, 'html.parser')
+        soup = self.requests_session(url=url)
         # Get the occurencies of class ticker to the variable rows
         rows = soup.find_all("span", {"class": "ticker"})
         # Defines the list to save all the fiis
@@ -50,42 +52,96 @@ class Crawler():
             fii_table.append(fii_ticker[0])
         return fii_table
 
+    def _normalize_price_string_to_float(self, price: str):
+        """Converts string to float
+        Args: price: string with the price
+        Returns: converted float with the price
+        """
+        return float(price.replace('.', '').replace(',','.'))
+
+
+    def _get_fii_price(self, fii_ticker: str):
+        """Retrieves the price for a fii
+        Args: fii_ticker: String with the fii ticker
+        Returns: Float value with the price
+        """
+        url = f'https://statusinvest.com.br/fundos-imobiliarios/{fii_ticker.lower()}'
+        soup = self.requests_session(url=url)
+        asset_price = soup.find("div", attrs={"title": 'Valor atual do ativo' }).find_all('strong')
+        return self._normalize_price_string_to_float(asset_price[0].text)
+
+    def _return_fii_info(self, fii_ticker: str):
+        """Returns a dict with fii info
+        Args: fii_ticker: String with the fii ticker
+        Returns: dict with that fii info
+        """
+        fii_price = {}
+        fii_price = { "ticker": fii_ticker,
+        "eod_price": self._get_fii_price(fii_ticker=fii_ticker),
+        "day": self.now.strftime("%d/%m/%Y")}
+        return fii_price
 
     def _get_price(self,fii_ticker: str):
         '''Get price for a given asset
         Args:
         fii_ticker: String with a fii ticker. Ex: bcff11
-
         Returns:
         The price of the asset
-
         '''
-        fii_price = {}
-        base_url = 'https://statusinvest.com.br/fundos-imobiliarios/'
-        url = base_url + fii_ticker.lower()
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; \
-                 Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0'}
-        content = requests.get(url, headers=headers)
-        soup = BeautifulSoup(content.text, 'html.parser')
         try:
-            for quote in soup.find('div', attrs={'title': 'Valor atual do ativo'}).find_all('strong'):
-                quote = quote.text
-                quote = quote.replace('.', '').replace(',','.')
-            fii_price["ticker"] = fii_ticker
-            fii_price["eod_price"] = float(quote)
-            fii_price["day"] = self.now.strftime("%d/%m/%Y")
-            return fii_price
-        except BaseException:
+            return self._return_fii_info(fii_ticker=fii_ticker)
+        except BaseException as error:
+            print(error)
             return "No return for this fii"
 
-    def add_price_data_to_table(self,collection: str,stock_list: list = None):
-        '''Adds the price of an asset to mongo db
-        
-        Args:
-        stock_list: List with the assets to get and add price
-        collection: Collection in mongo db
-        '''
+    def db_session(self, collection: str):
+        """Create a db session
+        Args: collection: mongodb collection to connect
+        Returns: A mongodb session
+        """
+        conn = MongoConnect()
+        return conn.connect(collection)
+
+    def update_fii(self, fii_to_add: dict):
+        """Updates fii if exists
+        Args: fii_to_add: dict with fii info
+        """
+        try:
+            self.session_db.update_one(
+                {'_id': fii_to_add['_id']},
+                {'$set': {'current_price': fii_to_add['current_price']}}
+            )
+            print(f"Price for {fii_to_add['name']} updated!")
+        except Exception as error:
+            print("Fii not found")
+            print(error)
+
+    def add_item_to_db(self, fii_to_add: dict):
+        """Adds a fii to DB
+        Args: fii_to_add: Dict with info about the fii
+        """
+        try:
+            fii = fii_to_add['name']
+            print(f"Will add {fii} - {self.now}")
+            self.session_db.replace_one({'_id': fii_to_add['_id']}, fii_to_add, upsert=True)
+            print(f"Price data for {fii} added - {self.now}")
+        except Exception as error:
+            print(error)
+            print("Something went wrong")
+
+    def format_fii_price(self, price: float):
+        """Round a float to two decimals places"""
+        return round(price,2)
+
+    def return_uid_fii(self, item: str):
+        """Returns a fii uid"""
+        return str(self.now.strftime("%d%m%y")) + '-' + item.lower()
+
+    def format_item(self, stock_list: list):
+        """Receives a list with stocks and returns a formated dict with basic info
+        Args: stocks_list: List with stocks to format
+        Returns: Dict with basic info
+        """
         if not stock_list:
             stock_list = self.get_fii_list()
 
@@ -93,39 +149,43 @@ class Crawler():
             print(item)
             try:
                 price_fii = self._get_price(item)
+                return {
+                '_id': self.return_uid_fii(item=item),
+                'date': self.today,
+                'name': item.lower(),
+                'current_price': self.format_fii_price(price_fii["eod_price"]),
+                }
 
-                uid_base = str(self.now.strftime("%d%m%y")) + '-'
-                uid_fii = uid_base + item.lower()
-
-                date = self.today
-                name = price_fii["ticker"].lower()
-                price = round(price_fii["eod_price"],2)
-
-                conn = MongoConnect()
-                conn = conn.connect(collection)
-                 
-                if conn.find_one({"_id": uid_fii}):
-                    conn.update_one({'_id': uid_fii}, {'$set': {'current_price': price}})
-                    print(f"Price for {item} updated!")
-                else:
-                    print(f"Will add {item} - {self.now}")
-                    item = {
-                        '_id': uid_fii,
-                        'date': date,
-                        'name': name,
-                        'current_price': price,
-                    }
-                    
-                    conn.replace_one({'_id': uid_fii}, item, upsert=True)
-
-                    print(f"Price data for {name} added - {self.now}")
             except Exception as error:
                 print(error)
-                print(f"There is no info for this fii - {self.now}")
+                return None
+
+    def find_fii(self, fii_id: str):
+        """Returns a fii if existes in DB"""
+        return self.session_db.find_one({"_id": fii_id})
+
+    def add_price_data_to_table(self,stock_list: list = None):
+        '''Adds the price of an asset to mongo db
+        Args:
+        stock_list: List with the assets to get and add price
+        collection: Collection in mongo db
+        '''
+
+        fii_item = self.format_item(stock_list=stock_list)
+
+        try:
+            print(f"Trying to add {fii_item['name']}")
+            if self.find_fii(fii_id=fii_item['_id']):
+                self.update_fii(fii_item)
+            else:
+                print("The fii doesn't exist. Will add")
+                self.add_item_to_db(fii_item)
+        except Exception as error:
+            print(f"Something went wrong {error}")
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         print("Exiting class")
-        # if self.client:
-        #     self.client.close()
+        

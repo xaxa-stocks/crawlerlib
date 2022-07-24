@@ -20,6 +20,5 @@ class MongoConnect():
         Args: col_name >>> Collection name to connect to
         """
         client = MongoClient(f'mongodb+srv://{self.username}:{self.password}@fii-api.gnuy4.mongodb.net/{self.db_name}?retryWrites=true&w=majority', tlsCAFile=certifi.where())
-        db_conn = client[self.db_name][col_name]
-        return db_conn
+        return client[self.db_name][col_name]
         

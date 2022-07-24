@@ -7,7 +7,7 @@ from crawler.mongo import MongoConnect
 def get_and_add_asset(stock_list: list = None ):
     """Main method called from pod"""
     with Crawler() as crawler_session:
-        crawler_session.add_price_data_to_table(stock_list=stock_list)
+        crawler_session.iterate_through_items(stock_list=stock_list)
 class Crawler():
     ''' Class to get fiis list, prices and save to a mongodb colletion '''
 
@@ -137,48 +137,55 @@ class Crawler():
         """Returns a fii uid"""
         return str(self.now.strftime("%d%m%y")) + '-' + item.lower()
 
-    def format_item(self, stock_list: list):
+    def format_item(self, item: str):
         """Receives a list with stocks and returns a formated dict with basic info
-        Args: stocks_list: List with stocks to format
+
+        Args: stocks_list: string with the item to be formated
         Returns: Dict with basic info
         """
+
+        print(item)
+        try:
+            price_fii = self._get_price(item)
+            return {
+            '_id': self.return_uid_fii(item=item),
+            'date': self.today,
+            'name': item.lower(),
+            'current_price': self.format_fii_price(price_fii["eod_price"]),
+            }
+
+        except Exception as error:
+            print(error)
+            return None
+
+    def iterate_through_items(self, stock_list: list = None):
+        """Go through all fii items"""
+
         if not stock_list:
             stock_list = self.get_fii_list()
 
         for item in stock_list:
-            print(item)
-            try:
-                price_fii = self._get_price(item)
-                return {
-                '_id': self.return_uid_fii(item=item),
-                'date': self.today,
-                'name': item.lower(),
-                'current_price': self.format_fii_price(price_fii["eod_price"]),
-                }
-
-            except Exception as error:
-                print(error)
-                return None
+            self.add_price_data_to_table(item=item)
 
     def find_fii(self, fii_id: str):
         """Returns a fii if existes in DB"""
         return self.session_db.find_one({"_id": fii_id})
 
-    def add_price_data_to_table(self,stock_list: list = None):
+    def add_price_data_to_table(self,item: str):
         '''Adds the price of an asset to mongo db
         Args:
         stock_list: List with the assets to get and add price
         collection: Collection in mongo db
         '''
 
-        fii_item = self.format_item(stock_list=stock_list)
+        fii_item = self.format_item(item=item)
 
         try:
             print(f"Trying to add {fii_item['name']}")
             if self.find_fii(fii_id=fii_item['_id']):
                 self.update_fii(fii_item)
             else:
-                print("The fii doesn't exist. Will add")
+                print("The fii doesn't exist  yet. Will add")
                 self.add_item_to_db(fii_item)
         except Exception as error:
             print(f"Something went wrong {error}")

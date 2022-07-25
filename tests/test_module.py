@@ -12,6 +12,8 @@ class TestFiis(TestCase):
     def setUpClass(cls):
         cls.TICKER = "bcff11"
         cls.crawler = Crawler()
+        cls.one_item = [cls.TICKER]
+        cls.several_items = ["hglg11", "recr11"]
 
     def test_list_fiis(self):
         """Method to test the price of an asset"""
@@ -40,10 +42,13 @@ class TestFiis(TestCase):
         assert fii_price["ticker"] == self.TICKER
         assert isinstance(fii_price["eod_price"], float)
 
-    def test_run(self):
+    def test_add_one_item(self):
         """Test the main method"""
-        test_list = [self.TICKER]
-        get_and_add_asset(stock_list=test_list)
+        get_and_add_asset(stock_list=self.one_item)
+
+    def test_add_several_items(self):
+        """Test the main method"""
+        get_and_add_asset(stock_list=self.several_items)
 
 if __name__ == '__main__':
     password = os.environ["DB_PASSWORD"]

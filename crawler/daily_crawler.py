@@ -91,8 +91,7 @@ class Crawler():
         try:
             return self._return_fii_info(fii_ticker=fii_ticker)
         except BaseException as error:
-            print(error)
-            return "No return for this fii"
+            raise error
 
     def db_session(self, collection: str):
         """Create a db session

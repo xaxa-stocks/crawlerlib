@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -43,16 +43,16 @@ jobs:
       run: |
         pytest
 
-  # release:
+  release:
 
-  #     runs-on: ubuntu-latest
-  #     needs: qa
-  #     steps:
-  #     - uses: actions/checkout@v3
-  #     - name: Create release
-  #       uses: actions/create-release@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-  #       with:
-  #         tag_name: ${{ github.run_number }}
-  #         release_name: Release ${{ github.run_number }}
+      runs-on: ubuntu-latest
+      needs: qa
+      steps:
+      - uses: actions/checkout@v3
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        with:
+          tag_name: ${{ github.run_number }}
+          release_name: Release ${{ github.run_number }}

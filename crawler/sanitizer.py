@@ -9,9 +9,6 @@ class Sanitizer(Crawler):
     Class to get last stock close and save it to time-series collection. Extends Crawler class
     """
 
-    # def __init__(self):
-    #     pass # Method to initialize class
-
     def retrieve_fii(self,stock_list: list):
         """"
         Method to retrieve stock close from the day before and save it to time-series collection.

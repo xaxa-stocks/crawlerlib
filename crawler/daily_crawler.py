@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from crawler.mongo import MongoConnect
 
+
 def get_and_add_asset(stock_list: list = None ):
     """Main method called from pod"""
     with Crawler() as crawler_session:
@@ -19,7 +20,7 @@ class Crawler():
         self.current_month = str(self.now.strftime("%m/%y"))
         self.session_db = self.db_session(collection="daily_info")
 
-    def requests_session(self, url):
+    def requests_session(self, url, content=None):
         """Generic requests session
         Args: url: Url to request
         Returns: bs in html parser
@@ -36,20 +37,22 @@ class Crawler():
         Returns:
         List with all the assets
         '''
+        # close popup from site
+        # self.close_popup()
         # url to retrieve the data from
         url = 'https://fiis.com.br/lista-de-fundos-imobiliarios/'
         soup = self.requests_session(url=url)
         # Get the occurencies of class ticker to the variable rows
-        rows = soup.find_all("span", {"class": "ticker"})
+        rows = soup.find_all("div", {"class": "tickerBox"})
         # Defines the list to save all the fiis
         fii_table = []
         # Loop to parse and correct every fii ticker and save it to the list
         for row in rows:
             # Get the text from the Beatifulsoup variable
             fii_ticker = row.get_text()
-            fii_ticker = fii_ticker.split(sep='"div", {"class": "stylelistrow"}')
+            fii_ticker = fii_ticker.split(sep='\n')
             # Append the correct value to the list
-            fii_table.append(fii_ticker[0])
+            fii_table.append(fii_ticker[3])
         return fii_table
 
     def _normalize_price_string_to_float(self, price: str):
@@ -58,7 +61,6 @@ class Crawler():
         Returns: converted float with the price
         """
         return float(price.replace('.', '').replace(',','.'))
-
 
     def _get_fii_price(self, fii_ticker: str):
         """Retrieves the price for a fii
@@ -75,11 +77,9 @@ class Crawler():
         Args: fii_ticker: String with the fii ticker
         Returns: dict with that fii info
         """
-        fii_price = {}
-        fii_price = { "ticker": fii_ticker,
+        return { "ticker": fii_ticker,
         "eod_price": self._get_fii_price(fii_ticker=fii_ticker),
         "day": self.now.strftime("%d/%m/%Y")}
-        return fii_price
 
     def _get_price(self,fii_ticker: str):
         '''Get price for a given asset
@@ -194,4 +194,3 @@ class Crawler():
 
     def __exit__(self, *args):
         print("Exiting class")
-        

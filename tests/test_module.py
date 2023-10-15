@@ -4,6 +4,7 @@ from unittest import TestCase
 import unittest
 from crawler.daily_crawler import get_and_add_asset
 from crawler.daily_crawler import Crawler
+from crawler.sanitizer import Sanitizer
 
 class TestFiis(TestCase):
     """Test class"""
@@ -14,6 +15,10 @@ class TestFiis(TestCase):
         cls.crawler = Crawler()
         cls.one_item = [cls.TICKER]
         cls.several_items = ["hglg11", "recr11"]
+        cls.sanitizer = Sanitizer()
+        # os.environ["DB_USERNAME"] = "test"
+        # os.environ["DB_PASSWORD"] = "test"
+        # os.environ["DB_NAME"] = "test"
 
     def test_list_fiis(self):
         """Method to test the price of an asset"""
@@ -49,6 +54,9 @@ class TestFiis(TestCase):
     def test_add_several_items(self):
         """Test the main method"""
         get_and_add_asset(stock_list=self.several_items)
+
+    def test_sanitizer_retrieve(self):
+        self.sanitizer.retrieve_fii(stock_list=["bcff11"])
 
 if __name__ == '__main__':
     password = os.environ["DB_PASSWORD"]

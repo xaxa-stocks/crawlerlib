@@ -1,8 +1,13 @@
 '''Module to get and save assets info'''
 from datetime import datetime, timedelta
 import requests
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
 from crawler.mongo import MongoConnect
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 def get_and_add_asset(stock_list: list = None ):
     """Main method called from pod"""
@@ -19,7 +24,7 @@ class Crawler():
         self.current_month = str(self.now.strftime("%m/%y"))
         self.session_db = self.db_session(collection="daily_info")
 
-    def requests_session(self, url):
+    def requests_session(self, url, content=None):
         """Generic requests session
         Args: url: Url to request
         Returns: bs in html parser
@@ -30,26 +35,64 @@ class Crawler():
         content = requests.get(url, headers=headers)
         return BeautifulSoup(content.text, 'html.parser')
 
+    def close_popup(self):
+        # Create a new instance of the web driver (you may need to install a browser driver such as chromedriver)
+        driver = webdriver.Chrome()
+        # Maximize the browser window to make it full screen
+        driver.maximize_window()
+
+        try:
+            # Open a web page
+            driver.get('https://fiis.com.br/lista-de-fundos-imobiliarios/')
+            # Wait for the popup to appear
+            # wait = WebDriverWait(driver, 15)  # Adjust the timeout as needed
+
+            popup_element = WebDriverWait(driver, 35).until(EC.element_to_be_clickable((By.CLASS_NAME, 'popup')))
+            popup_element.click()
+
+            url = 'https://fiis.com.br/lista-de-fundos-imobiliarios/'
+            page_source = driver.page_source
+            soup = self.requests_session(content=page_source,url=None)
+
+            # Handle any potential popup
+            if len(driver.window_handles) > 1:
+                # Switch to the popup window
+                driver.switch_to.window(driver.window_handles[-1])
+
+                # Perform actions in the popup (e.g., close it)
+                # For example, you can simulate a key press, such as ESC
+
+                # Switch back to the original window
+                driver.switch_to.window(driver.window_handles[0])
+
+        finally:
+            # Close the browser window when you're done
+            driver.quit()
+
+
     def get_fii_list(self):
         '''Get a list with all the available assets
 
         Returns:
         List with all the assets
         '''
+        # close popup from site
+        # self.close_popup()
         # url to retrieve the data from
         url = 'https://fiis.com.br/lista-de-fundos-imobiliarios/'
         soup = self.requests_session(url=url)
+        print(soup.title)
         # Get the occurencies of class ticker to the variable rows
-        rows = soup.find_all("span", {"class": "ticker"})
+        rows = soup.find_all("div", {"class": "tickerBox"})
         # Defines the list to save all the fiis
         fii_table = []
         # Loop to parse and correct every fii ticker and save it to the list
         for row in rows:
             # Get the text from the Beatifulsoup variable
             fii_ticker = row.get_text()
-            fii_ticker = fii_ticker.split(sep='"div", {"class": "stylelistrow"}')
+            fii_ticker = fii_ticker.split(sep='\n')
             # Append the correct value to the list
-            fii_table.append(fii_ticker[0])
+            fii_table.append(fii_ticker[3])
         return fii_table
 
     def _normalize_price_string_to_float(self, price: str):
@@ -194,4 +237,3 @@ class Crawler():
 
     def __exit__(self, *args):
         print("Exiting class")
-        

@@ -28,7 +28,8 @@ class Crawler():
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
                  AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36'}
-        content = requests.get(url, headers=headers)
+        session = requests.Session()
+        content = session.get(url, headers=headers)
         return BeautifulSoup(content.text, 'html.parser')
 
     def get_fii_list(self):

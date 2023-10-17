@@ -69,6 +69,8 @@ class Crawler():
         """
         url = f'https://statusinvest.com.br/fundos-imobiliarios/{fii_ticker.lower()}'
         soup = self.requests_session(url=url)
+        #debug error
+        print(soup)
         asset_price = soup.find("div", attrs={"title": 'Valor atual do ativo' }).find_all('strong')
         return self._normalize_price_string_to_float(asset_price[0].text)
 
